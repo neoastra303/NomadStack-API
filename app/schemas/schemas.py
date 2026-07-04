@@ -1,6 +1,8 @@
-from pydantic import BaseModel, Field
-from typing import Optional, List
 from datetime import datetime
+from typing import List, Optional
+
+from pydantic import BaseModel, ConfigDict, Field
+
 
 class WeatherResponse(BaseModel):
     temp_c: float
@@ -9,10 +11,12 @@ class WeatherResponse(BaseModel):
     wind_kph: float
     is_day: int
 
+
 class ExchangeResponse(BaseModel):
     base: str
     target: str
     rate: float
+
 
 class TravelScoreResponse(BaseModel):
     city: str
@@ -21,11 +25,11 @@ class TravelScoreResponse(BaseModel):
     exchange: ExchangeResponse
     recommendation: str
 
+
 class SearchHistorySchema(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: int
     city_name: str
     travel_score: float
     timestamp: datetime
-
-    class Config:
-        from_attributes = True
