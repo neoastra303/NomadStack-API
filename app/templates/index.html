@@ -18,6 +18,7 @@
       <h1>NomadStack</h1>
     </div>
     <p>Travel Intelligence Dashboard</p>
+    <button class="settings-btn" id="settings-btn" title="API Settings">⚙️</button>
   </header>
 
   <div class="search-card">
@@ -117,6 +118,33 @@
           <h3>Recommendation</h3>
         </div>
         <div id="rec-content"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Settings Modal -->
+  <div class="modal-overlay" id="settings-modal">
+    <div class="modal">
+      <div class="modal-header">
+        <h3>⚙️ API Settings</h3>
+        <button class="modal-close" id="modal-close">✕</button>
+      </div>
+      <p class="modal-desc">Your keys are stored in your browser only — never sent to our server.</p>
+      <div class="modal-body">
+        <label class="field">
+          <span>WeatherAPI Key</span>
+          <input type="password" id="weather-key" placeholder="Enter your WeatherAPI key" spellcheck="false" />
+          <a class="field-link" href="https://www.weatherapi.com" target="_blank">Get a free key →</a>
+        </label>
+        <label class="field">
+          <span>ExchangeRate-API Key</span>
+          <input type="password" id="exchange-key" placeholder="Enter your ExchangeRate-API key" spellcheck="false" />
+          <a class="field-link" href="https://www.exchangerate-api.com" target="_blank">Get a free key →</a>
+        </label>
+      </div>
+      <div class="modal-footer">
+        <button class="modal-btn secondary" id="modal-clear">Clear Keys</button>
+        <button class="modal-btn primary" id="modal-save">Save Keys</button>
       </div>
     </div>
   </div>

@@ -1,6 +1,6 @@
 import asyncio
 
-from fastapi import APIRouter, Query, Request
+from fastapi import APIRouter, Header, Query, Request
 
 from app.schemas.schemas import TravelScoreResponse
 from app.services.external_apis import ExchangeService, WeatherService
@@ -19,11 +19,13 @@ async def search_city(
     request: Request,
     city: str = Query(..., min_length=2, description="The name of the city to search for"),
     currency: str = Query("EUR", description="Target currency for exchange rate"),
+    x_weather_key: str | None = Header(None, alias="X-Weather-Api-Key"),
+    x_exchange_key: str | None = Header(None, alias="X-Exchange-Api-Key"),
 ):
     client = request.app.state.http_client
 
-    weather_task = WeatherService.get_weather_data(city, client)
-    exchange_task = ExchangeService.get_exchange_rate(client, "USD", currency)
+    weather_task = WeatherService.get_weather_data(city, client, api_key=x_weather_key)
+    exchange_task = ExchangeService.get_exchange_rate(client, "USD", currency, api_key=x_exchange_key)
 
     weather, exchange = await asyncio.gather(weather_task, exchange_task)
 

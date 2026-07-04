@@ -22,10 +22,20 @@ const exchangeBase = document.getElementById('exchange-base');
 const exchangeRate = document.getElementById('exchange-rate');
 const recContent = document.getElementById('rec-content');
 
+// Settings modal
+const settingsBtn = document.getElementById('settings-btn');
+const settingsModal = document.getElementById('settings-modal');
+const modalClose = document.getElementById('modal-close');
+const modalSave = document.getElementById('modal-save');
+const modalClear = document.getElementById('modal-clear');
+const weatherKeyInput = document.getElementById('weather-key');
+const exchangeKeyInput = document.getElementById('exchange-key');
+
 const RING_RADIUS = 38;
 const CIRCUMFERENCE = 2 * Math.PI * RING_RADIUS;
 let isSearching = false;
 
+// --- Currencies ---
 function populateCurrencies() {
   CURRENCIES.forEach((c) => {
     const opt = document.createElement('option');
@@ -35,6 +45,54 @@ function populateCurrencies() {
   });
 }
 
+// --- Settings ---
+function loadKeys() {
+  weatherKeyInput.value = localStorage.getItem('weather_api_key') || '';
+  exchangeKeyInput.value = localStorage.getItem('exchange_api_key') || '';
+}
+
+function saveKeys() {
+  const w = weatherKeyInput.value.trim();
+  const e = exchangeKeyInput.value.trim();
+  if (w) localStorage.setItem('weather_api_key', w);
+  else localStorage.removeItem('weather_api_key');
+  if (e) localStorage.setItem('exchange_api_key', e);
+  else localStorage.removeItem('exchange_api_key');
+}
+
+function clearKeys() {
+  weatherKeyInput.value = '';
+  exchangeKeyInput.value = '';
+  localStorage.removeItem('weather_api_key');
+  localStorage.removeItem('exchange_api_key');
+}
+
+function openModal() {
+  loadKeys();
+  settingsModal.classList.add('open');
+}
+
+function closeModal() {
+  settingsModal.classList.remove('open');
+}
+
+settingsBtn.addEventListener('click', openModal);
+modalClose.addEventListener('click', closeModal);
+settingsModal.addEventListener('click', (e) => {
+  if (e.target === settingsModal) closeModal();
+});
+
+modalSave.addEventListener('click', () => {
+  saveKeys();
+  closeModal();
+});
+
+modalClear.addEventListener('click', () => {
+  clearKeys();
+  closeModal();
+});
+
+// --- Score helpers ---
 function getScoreColor(score) {
   if (score >= 75) return '#22c55e';
   if (score >= 50) return '#eab308';
@@ -55,6 +113,7 @@ function updateScoreRing(score) {
   scoreValue.textContent = score;
 }
 
+// --- UI state ---
 function showError(msg) {
   error.textContent = msg;
   error.classList.add('show');
@@ -77,6 +136,7 @@ function hideLoading() {
   searchBtn.disabled = false;
 }
 
+// --- Render ---
 function renderWeather(data) {
   weatherDetails.innerHTML = '';
   const rows = [
@@ -118,6 +178,7 @@ function renderResults(data) {
   results.classList.add('show');
 }
 
+// --- Search ---
 async function handleSearch(e) {
   if (e) e.preventDefault();
 
@@ -133,8 +194,17 @@ async function handleSearch(e) {
   const currency = currencySelect.value;
   showLoading();
 
+  const headers = {};
+  const wk = localStorage.getItem('weather_api_key');
+  const ek = localStorage.getItem('exchange_api_key');
+  if (wk) headers['X-Weather-Api-Key'] = wk;
+  if (ek) headers['X-Exchange-Api-Key'] = ek;
+
   try {
-    const resp = await fetch(`/api/v1/search?city=${encodeURIComponent(city)}&currency=${currency}`);
+    const resp = await fetch(
+      `/api/v1/search?city=${encodeURIComponent(city)}&currency=${currency}`,
+      { headers },
+    );
     const data = await resp.json();
 
     if (!resp.ok) {

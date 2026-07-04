@@ -13,13 +13,18 @@ EXCHANGE_CACHE_TTL = 3600
 
 class WeatherService:
     @staticmethod
-    async def get_weather_data(city: str, client: httpx.AsyncClient) -> WeatherResponse:
+    async def get_weather_data(
+        city: str,
+        client: httpx.AsyncClient,
+        api_key: str | None = None,
+    ) -> WeatherResponse:
         cache_key = f"weather:{city.lower()}"
         cached = await cache.get(cache_key)
         if cached:
             return WeatherResponse(**cached)
 
-        url = f"http://api.weatherapi.com/v1/current.json?key={settings.WEATHER_API_KEY}&q={city}&aqi=no"
+        key = api_key or settings.WEATHER_API_KEY
+        url = f"http://api.weatherapi.com/v1/current.json?key={key}&q={city}&aqi=no"
         try:
             response = await client.get(url)
         except httpx.RequestError as e:
@@ -48,13 +53,15 @@ class ExchangeService:
         client: httpx.AsyncClient,
         base_currency: str = "USD",
         target_currency: str = "EUR",
+        api_key: str | None = None,
     ) -> ExchangeResponse:
         cache_key = f"exchange:{base_currency}:{target_currency}"
         cached = await cache.get(cache_key)
         if cached:
             return ExchangeResponse(**cached)
 
-        url = f"https://v6.exchangerate-api.com/v6/{settings.EXCHANGE_RATE_API_KEY}/pair/{base_currency}/{target_currency}"
+        key = api_key or settings.EXCHANGE_RATE_API_KEY
+        url = f"https://v6.exchangerate-api.com/v6/{key}/pair/{base_currency}/{target_currency}"
         try:
             response = await client.get(url)
         except httpx.RequestError as e:
