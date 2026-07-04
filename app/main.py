@@ -66,10 +66,10 @@ app.add_middleware(
 @app.exception_handler(NomadStackError)
 async def nomadstack_exception_handler(request: Request, exc: NomadStackError):
     if isinstance(exc, CityNotFoundError):
-        return JSONResponse(status_code=404, detail={"error": str(exc)})
+        return JSONResponse(status_code=404, content={"error": str(exc)})
     if isinstance(exc, ServiceUnavailableError):
-        return JSONResponse(status_code=502, detail={"error": str(exc)})
-    return JSONResponse(status_code=500, detail={"error": str(exc)})
+        return JSONResponse(status_code=502, content={"error": str(exc)})
+    return JSONResponse(status_code=500, content={"error": str(exc)})
 
 
 app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="static")
