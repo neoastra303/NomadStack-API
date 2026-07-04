@@ -1,0 +1,32 @@
+app = "nomadstack-api"
+
+[build]
+  dockerfile = "Dockerfile"
+
+[env]
+  DATABASE_URL = "postgresql://postgres:postgres@localhost:5432/nomadstack"
+  SECRET_KEY = "change-me-in-production"
+  WEATHER_API_KEY = ""
+  EXCHANGE_RATE_API_KEY = ""
+  OPEN_TRIP_MAP_KEY = ""
+  REDIS_URL = ""
+
+[http_service]
+  internal_port = 8000
+  force_https = true
+  auto_stop_machines = true
+  auto_start_machines = true
+  min_machines_running = 0
+
+[[services]]
+  protocol = "tcp"
+  internal_port = 8000
+
+  [[services.ports]]
+    port = 80
+    handlers = ["http"]
+    force_https = true
+
+  [[services.ports]]
+    port = 443
+    handlers = ["tls"]

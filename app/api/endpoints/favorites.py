@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, Header, HTTPException, Query
 from jose import JWTError, jwt
 from sqlalchemy.orm import Session
 
@@ -25,19 +25,36 @@ def _get_user(token: str, db: Session) -> User:
     return user
 
 
-@router.get("/favorites", response_model=list[FavoriteResponse])
+@router.get(
+    "/favorites",
+    response_model=list[FavoriteResponse],
+    summary="List favorite cities",
+    description="Returns all saved favorite cities for the authenticated user.",
+    response_description="List of favorite cities with metadata",
+)
 async def list_favorites(
-    authorization: str = "",
+    authorization: str = Header("", alias="Authorization"),
     db: Session = Depends(get_db),
 ):
     user = _get_user(authorization, db)
-    return db.query(Favorite).filter(Favorite.user_id == user.id).order_by(Favorite.created_at.desc()).all()
+    return (
+        db.query(Favorite)
+        .filter(Favorite.user_id == user.id)
+        .order_by(Favorite.created_at.desc())
+        .all()
+    )
 
 
-@router.post("/favorites", response_model=FavoriteResponse)
+@router.post(
+    "/favorites",
+    response_model=FavoriteResponse,
+    summary="Add a favorite city",
+    description="Save a city to the authenticated user's favorites list.",
+    response_description="The created favorite entry",
+)
 async def add_favorite(
     data: FavoriteCreate,
-    authorization: str = "",
+    authorization: str = Header("", alias="Authorization"),
     db: Session = Depends(get_db),
 ):
     user = _get_user(authorization, db)
@@ -55,10 +72,15 @@ async def add_favorite(
     return FavoriteResponse.model_validate(fav)
 
 
-@router.delete("/favorites/{city}")
+@router.delete(
+    "/favorites/{city}",
+    summary="Remove a favorite city",
+    description="Remove a city from the authenticated user's favorites.",
+    response_description="Confirmation of removal",
+)
 async def remove_favorite(
     city: str,
-    authorization: str = "",
+    authorization: str = Header("", alias="Authorization"),
     db: Session = Depends(get_db),
 ):
     user = _get_user(authorization, db)
@@ -73,10 +95,16 @@ async def remove_favorite(
     return {"status": "removed", "city": city}
 
 
-@router.get("/history", response_model=list[SearchHistorySchema])
+@router.get(
+    "/history",
+    response_model=list[SearchHistorySchema],
+    summary="Get search history",
+    description="Returns the authenticated user's recent search history.",
+    response_description="List of past searches with timestamps",
+)
 async def list_history(
-    authorization: str = "",
-    limit: int = Query(20, ge=1, le=100),
+    authorization: str = Header("", alias="Authorization"),
+    limit: int = Query(20, ge=1, le=100, description="Number of history entries to return"),
     db: Session = Depends(get_db),
 ):
     user = _get_user(authorization, db)

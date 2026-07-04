@@ -1,5 +1,7 @@
 import asyncio
+from typing import Any
 
+import httpx
 from fastapi import APIRouter, Header, Query, Request
 
 from app.schemas.schemas import (
@@ -38,7 +40,7 @@ def make_recommendation(score: float, temp_c: float) -> str:
 async def _search_single(
     city: str,
     currency: str,
-    client: object,
+    client: httpx.AsyncClient,
     weather_key: str | None,
     exchange_key: str | None,
     include_extra: bool = False,
@@ -48,10 +50,9 @@ async def _search_single(
 
     if include_extra:
         forecast_task = WeatherService.get_forecast(city, client, api_key=weather_key)
-        weather, exchange, forecast = await asyncio.gather(weather_task, exchange_task, forecast_task)
+        weather, exchange, _ = await asyncio.gather(weather_task, exchange_task, forecast_task)
     else:
         weather, exchange = await asyncio.gather(weather_task, exchange_task)
-        forecast = None
 
     breakdown = calculate_score(weather.temp_c, weather.humidity)
     recommendation = make_recommendation(breakdown.total, weather.temp_c)
@@ -66,12 +67,31 @@ async def _search_single(
     )
 
 
-@router.get("/search", response_model=TravelScoreResponse)
+@router.get(
+    "/search",
+    response_model=TravelScoreResponse,
+    summary="Get travel score for a city",
+    description="Returns a travel score (0-100) for a city based on weather and exchange rate. "
+    "Optionally include 7-day forecast, nearby attractions, and country information.",
+    response_description="Travel score with weather, exchange rate, and optional extras",
+)
 async def search_city(
     request: Request,
-    city: str = Query(..., min_length=2, description="The name of the city to search for"),
-    currency: str = Query("EUR", description="Target currency for exchange rate"),
-    include: str = Query("", description="Extra data: forecast,attractions,country"),
+    city: str = Query(
+        ..., min_length=2,
+        description="City name to search for",
+        examples=["Paris", "London", "Tokyo"],
+    ),
+    currency: str = Query(
+        "EUR",
+        description="Target currency for exchange rate (USD base)",
+        examples=["EUR", "GBP", "JPY"],
+    ),
+    include: str = Query(
+        "",
+        description="Comma-separated extras: forecast, attractions, country",
+        examples=["forecast,attractions,country"],
+    ),
     x_weather_key: str | None = Header(None, alias="X-Weather-Api-Key"),
     x_exchange_key: str | None = Header(None, alias="X-Exchange-Api-Key"),
 ):
@@ -79,16 +99,18 @@ async def search_city(
     extras = {e.strip() for e in include.split(",") if e.strip()}
 
     weather_task = WeatherService.get_weather_data(city, client, api_key=x_weather_key)
-    exchange_task = ExchangeService.get_exchange_rate(client, "USD", currency, api_key=x_exchange_key)
-    tasks = [weather_task, exchange_task]
+    exchange_task = ExchangeService.get_exchange_rate(
+        client, "USD", currency, api_key=x_exchange_key
+    )
+    tasks: list[Any] = [weather_task, exchange_task]
 
-    forecast = None
     if "forecast" in extras:
         tasks.append(WeatherService.get_forecast(city, client, api_key=x_weather_key))
         results = await asyncio.gather(*tasks)
         weather, exchange, forecast = results[0], results[1], results[2]
     else:
         weather, exchange = await asyncio.gather(*tasks)
+        forecast = None
 
     breakdown = calculate_score(weather.temp_c, weather.humidity)
     recommendation = make_recommendation(breakdown.total, weather.temp_c)
@@ -121,10 +143,20 @@ async def search_city(
     )
 
 
-@router.get("/compare", response_model=MultiCityResponse)
+@router.get(
+    "/compare",
+    response_model=MultiCityResponse,
+    summary="Compare multiple cities",
+    description="Compare travel scores across multiple cities, ranked from best to worst.",
+    response_description="Ranked list of city travel scores",
+)
 async def compare_cities(
     request: Request,
-    cities: str = Query(..., description="Comma-separated city names"),
+    cities: str = Query(
+        ...,
+        description="Comma-separated city names to compare",
+        examples=["Paris, London, Tokyo"],
+    ),
     currency: str = Query("EUR", description="Target currency"),
     x_weather_key: str | None = Header(None, alias="X-Weather-Api-Key"),
     x_exchange_key: str | None = Header(None, alias="X-Exchange-Api-Key"),
@@ -138,21 +170,26 @@ async def compare_cities(
     ]
     results = await asyncio.gather(*tasks, return_exceptions=True)
 
-    valid = []
+    valid: list[CityResult] = []
     for r in results:
-        if isinstance(r, Exception):
-            continue
-        valid.append(r)
+        if not isinstance(r, Exception):
+            valid.append(r)  # type: ignore[arg-type]
 
     valid.sort(key=lambda x: x.travel_score, reverse=True)
     return MultiCityResponse(results=valid)
 
 
-@router.get("/forecast", response_model=ForecastResponse)
+@router.get(
+    "/forecast",
+    response_model=ForecastResponse,
+    summary="Get 7-day forecast",
+    description="Returns a multi-day weather forecast for a city.",
+    response_description="Daily forecast with temperatures, conditions, and rain chance",
+)
 async def forecast(
     request: Request,
-    city: str = Query(..., min_length=2),
-    days: int = Query(7, ge=1, le=10),
+    city: str = Query(..., min_length=2, examples=["Paris"]),
+    days: int = Query(7, ge=1, le=10, description="Number of forecast days"),
     x_weather_key: str | None = Header(None, alias="X-Weather-Api-Key"),
 ):
     client = request.app.state.http_client

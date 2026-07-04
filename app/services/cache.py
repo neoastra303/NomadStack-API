@@ -1,5 +1,5 @@
 import json
-from typing import Any, Optional
+from typing import Any
 
 import redis.asyncio as aioredis
 
@@ -10,7 +10,7 @@ settings = get_settings()
 
 class RedisCache:
     def __init__(self):
-        self.client: Optional[aioredis.Redis] = None
+        self.client: aioredis.Redis | None = None
 
     async def init(self):
         if settings.REDIS_URL:
@@ -20,7 +20,7 @@ class RedisCache:
         if self.client:
             await self.client.close()
 
-    async def get(self, key: str) -> Optional[Any]:
+    async def get(self, key: str) -> Any | None:
         if not self.client:
             return None
         data = await self.client.get(key)

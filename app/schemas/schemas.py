@@ -1,5 +1,4 @@
 from datetime import datetime
-from typing import List, Optional
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -22,7 +21,7 @@ class ForecastDay(BaseModel):
 
 class ForecastResponse(BaseModel):
     city: str
-    days: List[ForecastDay]
+    days: list[ForecastDay]
 
 
 class ExchangeResponse(BaseModel):
@@ -36,7 +35,7 @@ class AttractionResponse(BaseModel):
     kinds: str
     lat: float
     lon: float
-    distance: Optional[float] = None
+    distance: float | None = None
 
 
 class CountryInfo(BaseModel):
@@ -45,9 +44,9 @@ class CountryInfo(BaseModel):
     region: str
     population: int
     flag: str
-    languages: List[str]
-    currencies: List[str]
-    timezones: List[str]
+    languages: list[str]
+    currencies: list[str]
+    timezones: list[str]
 
 
 class ScoreBreakdown(BaseModel):
@@ -68,7 +67,7 @@ class CityResult(BaseModel):
 
 
 class MultiCityResponse(BaseModel):
-    results: List[CityResult]
+    results: list[CityResult]
     sorted_by: str = "score"
 
 
@@ -76,10 +75,10 @@ class TravelScoreResponse(BaseModel):
     city: str
     travel_score: float = Field(..., ge=0, le=100)
     weather: WeatherResponse
-    forecast: Optional[List[ForecastDay]] = None
+    forecast: list[ForecastDay] | None = None
     exchange: ExchangeResponse
-    attractions: Optional[List[AttractionResponse]] = None
-    country_info: Optional[CountryInfo] = None
+    attractions: list[AttractionResponse] | None = None
+    country_info: CountryInfo | None = None
     score_breakdown: ScoreBreakdown
     recommendation: str
 
@@ -115,15 +114,15 @@ class UserProfile(BaseModel):
 
 class TokenResponse(BaseModel):
     access_token: str
-    token_type: str = "bearer"
+    token_type: str = "bearer"  # noqa: S105
     user: UserProfile
 
 
 class FavoriteCreate(BaseModel):
     city_name: str
-    country: Optional[str] = None
-    lat: Optional[float] = None
-    lon: Optional[float] = None
+    country: str | None = None
+    lat: float | None = None
+    lon: float | None = None
 
 
 class FavoriteResponse(BaseModel):
@@ -131,7 +130,7 @@ class FavoriteResponse(BaseModel):
 
     id: int
     city_name: str
-    country: Optional[str] = None
-    lat: Optional[float] = None
-    lon: Optional[float] = None
+    country: str | None = None
+    lat: float | None = None
+    lon: float | None = None
     created_at: datetime

@@ -1,6 +1,6 @@
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, Header, HTTPException
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 from sqlalchemy.orm import Session
@@ -16,13 +16,19 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
 def create_access_token(data: dict) -> str:
-    to_encode = data.copy()
-    expire = datetime.now(timezone.utc) + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+    to_encode = {k: str(v) if k == "sub" else v for k, v in data.items()}
+    expire = datetime.now(UTC) + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     to_encode.update({"exp": expire})
     return jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
 
 
-@router.post("/register", response_model=TokenResponse)
+@router.post(
+    "/register",
+    response_model=TokenResponse,
+    summary="Create a new account",
+    description="Register a new user with username, email, and password. Returns a JWT token.",
+    response_description="JWT access token with user profile",
+)
 async def register(data: UserCreate, db: Session = Depends(get_db)):
     if db.query(User).filter(User.username == data.username).first():
         raise HTTPException(status_code=400, detail="Username already taken")
@@ -45,7 +51,13 @@ async def register(data: UserCreate, db: Session = Depends(get_db)):
     )
 
 
-@router.post("/login", response_model=TokenResponse)
+@router.post(
+    "/login",
+    response_model=TokenResponse,
+    summary="Sign in to your account",
+    description="Authenticate with username and password. Returns a JWT token.",
+    response_description="JWT access token with user profile",
+)
 async def login(data: UserLogin, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.username == data.username).first()
     if not user or not pwd_context.verify(data.password, user.hashed_password):
@@ -58,9 +70,15 @@ async def login(data: UserLogin, db: Session = Depends(get_db)):
     )
 
 
-@router.get("/profile", response_model=UserProfile)
+@router.get(
+    "/profile",
+    response_model=UserProfile,
+    summary="Get your profile",
+    description="Returns the authenticated user's profile. Requires a Bearer token.",
+    response_description="User profile with id, username, email",
+)
 async def profile(
-    authorization: str = "",
+    authorization: str = Header("", alias="Authorization"),
     db: Session = Depends(get_db),
 ):
     if not authorization.startswith("Bearer "):
