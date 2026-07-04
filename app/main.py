@@ -1,15 +1,21 @@
 import logging
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 import httpx
 import structlog
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
+from fastapi.templating import Jinja2Templates
 
 from app.api.endpoints import search
 from app.core.exceptions import CityNotFoundError, NomadStackError, ServiceUnavailableError
 from app.services.cache import cache
+
+BASE_DIR = Path(__file__).resolve().parent
+templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
 
 structlog.configure(
     processors=[
@@ -66,16 +72,13 @@ async def nomadstack_exception_handler(request: Request, exc: NomadStackError):
     return JSONResponse(status_code=500, detail={"error": str(exc)})
 
 
+app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="static")
 app.include_router(search.router, prefix="/api/v1", tags=["Travel Intelligence"])
 
 
 @app.get("/")
-async def root():
-    return {
-        "message": "Welcome to NomadStack API",
-        "docs": "/docs",
-        "status": "operational",
-    }
+async def root(request: Request):
+    return templates.TemplateResponse("index.html", {"request": request})
 
 
 @app.get("/health")
