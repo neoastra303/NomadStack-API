@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NomadStack — Travel Intelligence</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="/static/css/style.css" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+</head>
+<body>
+
+<div class="app">
+  <!-- Sidebar -->
+  <nav class="sidebar" id="sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-icon">🧭</div>
+      <span class="brand-text">NomadStack</span>
+    </div>
+    <div class="sidebar-links">
+      <a class="nav-link active" data-view="dashboard" href="#dashboard">🔍 Search</a>
+      <a class="nav-link" data-view="compare" href="#compare">📊 Compare</a>
+      <a class="nav-link" data-view="favorites" href="#favorites">❤️ Favorites</a>
+      <a class="nav-link" data-view="history" href="#history">🕐 History</a>
+    </div>
+    <div class="sidebar-bottom">
+      <button class="nav-link" id="theme-toggle">🌙 Theme</button>
+      <a class="nav-link" data-view="settings" href="#settings">⚙️ Settings</a>
+      <a class="nav-link" id="auth-link" data-view="login" href="#login">👤 Sign In</a>
+    </div>
+  </nav>
+
+  <!-- Main content -->
+  <main class="main" id="main">
+    <div class="container">
+
+      <!-- ===== DASHBOARD VIEW ===== -->
+      <section class="view active" id="view-dashboard">
+        <header class="page-header">
+          <h1>Explore Cities</h1>
+          <p>Search any city for real-time travel intelligence</p>
+        </header>
+
+        <div class="search-card">
+          <form id="search-form" class="search-row">
+            <input type="text" id="city-input" placeholder="Search a city… e.g. Paris, London, Tokyo" autocomplete="off" spellcheck="false" />
+            <select id="currency-select"><option value="EUR" selected>EUR</option></select>
+            <button type="submit" id="search-btn">Search</button>
+          </form>
+          <div class="search-options">
+            <label class="toggle-label"><input type="checkbox" id="inc-forecast" checked /> <span>Forecast</span></label>
+            <label class="toggle-label"><input type="checkbox" id="inc-attractions" /> <span>Attractions</span></label>
+            <label class="toggle-label"><input type="checkbox" id="inc-country" /> <span>Country Info</span></label>
+          </div>
+        </div>
+
+        <div id="error" class="error"></div>
+
+        <!-- Loading -->
+        <div id="loading" class="loading">
+          <div class="skeleton-header"><div class="skeleton-ring"></div><div class="skeleton-lines"><div class="skeleton-line"></div><div class="skeleton-line"></div></div></div>
+          <div class="skeleton-grid"><div class="skeleton-card"></div><div class="skeleton-card"></div><div class="skeleton-card"></div><div class="skeleton-card"></div></div>
+        </div>
+
+        <!-- Results -->
+        <div id="results" class="results" style="display:none">
+          <!-- Hero -->
+          <div class="hero-card" id="hero-card">
+            <div class="score-ring">
+              <svg width="88" height="88" viewBox="0 0 88 88">
+                <circle class="bg-circle" cx="44" cy="44" r="38"/>
+                <circle id="score-circle" class="value-circle" cx="44" cy="44" r="38" stroke-dasharray="0" stroke-dashoffset="0"/>
+              </svg>
+              <div class="score-text"><span class="score-number" id="score-value">0</span><span class="score-unit">Score</span></div>
+            </div>
+            <div class="city-info">
+              <div class="city-badge">📍 <span id="city-country"></span></div>
+              <h2 id="city-name">—</h2>
+              <div class="score-label" id="rec-text">Travel Score</div>
+              <div class="city-meta" id="city-meta"></div>
+            </div>
+          </div>
+
+          <!-- Score Breakdown -->
+          <div class="card" id="breakdown-card" style="margin-bottom:0.75rem">
+            <div class="card-header"><div class="card-icon blue">📊</div><h3>Score Breakdown</h3></div>
+            <div class="breakdown-bars" id="breakdown-bars"></div>
+          </div>
+
+          <!-- Cards grid -->
+          <div class="cards" id="results-cards">
+            <div class="card">
+              <div class="card-header"><div class="card-icon blue">🌡️</div><h3>Temperature</h3></div>
+              <div class="value" id="weather-temp">—</div>
+              <div class="sub" id="weather-cond">—</div>
+            </div>
+            <div class="card">
+              <div class="card-header"><div class="card-icon green">💱</div><h3>Exchange Rate</h3></div>
+              <div class="value" id="exchange-base">—</div>
+              <div class="sub" id="exchange-rate">—</div>
+            </div>
+            <div class="card full">
+              <div class="card-header"><div class="card-icon purple">🌤️</div><h3>Weather Details</h3></div>
+              <div class="detail-grid" id="weather-details"></div>
+            </div>
+            <div class="card full" id="rec-card">
+              <div class="card-header"><div class="card-icon amber">💡</div><h3>Recommendation</h3></div>
+              <div id="rec-content"></div>
+            </div>
+          </div>
+
+          <!-- Forecast -->
+          <div class="card full" id="forecast-card" style="display:none;margin-top:0.75rem">
+            <div class="card-header"><div class="card-icon blue">📅</div><h3>7-Day Forecast</h3></div>
+            <div class="forecast-grid" id="forecast-grid"></div>
+          </div>
+
+          <!-- Attractions -->
+          <div class="card full" id="attractions-card" style="display:none;margin-top:0.75rem">
+            <div class="card-header"><div class="card-icon green">🏛️</div><h3>Nearby Attractions</h3></div>
+            <div class="attractions-list" id="attractions-list"></div>
+          </div>
+
+          <!-- Map -->
+          <div class="card full" id="map-card" style="display:none;margin-top:0.75rem">
+            <div class="card-header"><div class="card-icon purple">🗺️</div><h3>Map</h3></div>
+            <div id="map" style="height:300px;border-radius:8px;overflow:hidden"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== COMPARE VIEW ===== -->
+      <section class="view" id="view-compare">
+        <header class="page-header">
+          <h1>Compare Cities</h1>
+          <p>Enter multiple cities (comma-separated) to compare scores side-by-side</p>
+        </header>
+        <div class="search-card">
+          <form id="compare-form" class="search-row">
+            <input type="text" id="compare-input" placeholder="e.g. Paris, London, Tokyo, New York" autocomplete="off" spellcheck="false" />
+            <button type="submit" id="compare-btn">Compare</button>
+          </form>
+        </div>
+        <div id="compare-error" class="error"></div>
+        <div id="compare-loading" class="loading" style="display:none">
+          <div class="skeleton-grid"><div class="skeleton-card"></div><div class="skeleton-card"></div><div class="skeleton-card"></div></div>
+        </div>
+        <div id="compare-results" style="display:none">
+          <table class="compare-table" id="compare-table">
+            <thead><tr><th>Rank</th><th>City</th><th>Score</th><th>Temp</th><th>Condition</th><th>Exchange</th></tr></thead>
+            <tbody id="compare-body"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ===== FAVORITES VIEW ===== -->
+      <section class="view" id="view-favorites">
+        <header class="page-header">
+          <h1>❤️ Favorites</h1>
+          <p>Your saved cities — sign in to sync across devices</p>
+        </header>
+        <div id="favorites-list" class="empty-state">Sign in to see your favorites.</div>
+      </section>
+
+      <!-- ===== HISTORY VIEW ===== -->
+      <section class="view" id="view-history">
+        <header class="page-header">
+          <h1>🕐 Search History</h1>
+          <p>Recently searched cities</p>
+        </header>
+        <div id="history-list" class="empty-state">Sign in to see your search history.</div>
+      </section>
+
+      <!-- ===== SETTINGS VIEW ===== -->
+      <section class="view" id="view-settings">
+        <header class="page-header">
+          <h1>⚙️ Settings</h1>
+          <p>Configure your API keys and preferences</p>
+        </header>
+        <div class="card full">
+          <div class="card-header"><div class="card-icon blue">🔑</div><h3>API Keys (stored in browser only)</h3></div>
+          <div class="settings-fields">
+            <label class="field"><span>WeatherAPI Key</span>
+              <input type="password" id="weather-key" placeholder="Enter your WeatherAPI key" spellcheck="false" />
+              <a class="field-link" href="https://www.weatherapi.com" target="_blank">Get a free key →</a>
+            </label>
+            <label class="field"><span>ExchangeRate-API Key</span>
+              <input type="password" id="exchange-key" placeholder="Enter your ExchangeRate-API key" spellcheck="false" />
+              <a class="field-link" href="https://www.exchangerate-api.com" target="_blank">Get a free key →</a>
+            </label>
+            <div class="settings-actions">
+              <button class="btn secondary" id="settings-clear">Clear Keys</button>
+              <button class="btn primary" id="settings-save">Save Keys</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== LOGIN VIEW ===== -->
+      <section class="view" id="view-login">
+        <header class="page-header">
+          <h1>👤 Account</h1>
+          <p>Sign in or create an account</p>
+        </header>
+        <div class="auth-container">
+          <div class="card full" id="login-form-card">
+            <div class="card-header"><div class="card-icon blue">🔐</div><h3>Sign In</h3></div>
+            <form id="login-form" class="auth-form">
+              <input type="text" id="login-username" placeholder="Username" required />
+              <input type="password" id="login-password" placeholder="Password" required />
+              <button type="submit" class="btn primary">Sign In</button>
+            </form>
+            <p style="margin-top:0.75rem;color:var(--text-secondary);font-size:0.85rem">
+              No account? <a href="#" id="show-register" style="color:var(--accent-3)">Register here</a>
+            </p>
+          </div>
+          <div class="card full" id="register-form-card" style="display:none">
+            <div class="card-header"><div class="card-icon green">✨</div><h3>Create Account</h3></div>
+            <form id="register-form" class="auth-form">
+              <input type="text" id="reg-username" placeholder="Username" required />
+              <input type="email" id="reg-email" placeholder="Email" required />
+              <input type="password" id="reg-password" placeholder="Password (min 6 chars)" required />
+              <button type="submit" class="btn primary">Create Account</button>
+            </form>
+            <p style="margin-top:0.75rem;color:var(--text-secondary);font-size:0.85rem">
+              Already have an account? <a href="#" id="show-login" style="color:var(--accent-3)">Sign in</a>
+            </p>
+          </div>
+          <div id="auth-error" class="error"></div>
+          <div id="auth-success" class="card full" style="display:none;text-align:center;padding:2rem">
+            <div style="font-size:2rem;margin-bottom:0.5rem">🎉</div>
+            <h3 id="auth-success-msg">Signed in!</h3>
+          </div>
+        </div>
+      </section>
+
+      <footer>
+        Built with <a href="https://fastapi.tiangolo.com" target="_blank">FastAPI</a>
+        <span class="dot">·</span>
+        <a href="/docs" target="_blank">API Docs</a>
+        <span class="dot">·</span>
+        <a href="https://github.com/neoastra303/NomadStack-API" target="_blank">GitHub</a>
+      </footer>
+    </div>
+  </main>
+</div>
+
+<!-- Mobile sidebar toggle -->
+<button class="sidebar-toggle" id="sidebar-toggle">☰</button>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="/static/js/app.js"></script>
+</body>
+</html>

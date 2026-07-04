@@ -1,7 +1,14 @@
-from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, DateTime, Float
+from datetime import datetime, timezone
+
+from sqlalchemy import Boolean, Column, DateTime, Float, ForeignKey, Integer, String
 from sqlalchemy.orm import relationship
-from datetime import datetime
+
 from app.core.database import Base
+
+
+def _utcnow():
+    return datetime.now(timezone.utc)
+
 
 class User(Base):
     __tablename__ = "users"
@@ -15,6 +22,7 @@ class User(Base):
     searches = relationship("SearchHistory", back_populates="user")
     favorites = relationship("Favorite", back_populates="user")
 
+
 class SearchHistory(Base):
     __tablename__ = "search_history"
 
@@ -23,9 +31,10 @@ class SearchHistory(Base):
     city_name = Column(String, nullable=False)
     country = Column(String)
     travel_score = Column(Float)
-    timestamp = Column(DateTime, default=datetime.utcnow)
+    timestamp = Column(DateTime, default=_utcnow)
 
     user = relationship("User", back_populates="searches")
+
 
 class Favorite(Base):
     __tablename__ = "favorites"
@@ -36,6 +45,6 @@ class Favorite(Base):
     country = Column(String)
     lat = Column(Float)
     lon = Column(Float)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=_utcnow)
 
     user = relationship("User", back_populates="favorites")
