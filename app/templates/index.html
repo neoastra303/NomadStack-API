@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>NomadStack — Travel Intelligence</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/static/css/style.css" />
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
 </head>
@@ -13,7 +13,10 @@
 
 <div class="container">
   <header>
-    <h1>NomadStack</h1>
+    <div class="logo">
+      <div class="logo-icon">🧭</div>
+      <h1>NomadStack</h1>
+    </div>
     <p>Travel Intelligence Dashboard</p>
   </header>
 
@@ -26,6 +29,7 @@
         required
         minlength="2"
         autocomplete="off"
+        spellcheck="false"
       />
       <select id="currency-select">
         <option value="EUR" selected>EUR</option>
@@ -36,62 +40,92 @@
 
   <div id="error" class="error"></div>
 
+  <!-- Loading skeleton -->
   <div id="loading" class="loading">
-    <div class="spinner"></div>
-    <p>Fetching travel data…</p>
+    <div class="skeleton-header">
+      <div class="skeleton-ring"></div>
+      <div class="skeleton-lines">
+        <div class="skeleton-line"></div>
+        <div class="skeleton-line"></div>
+      </div>
+    </div>
+    <div class="skeleton-grid">
+      <div class="skeleton-card"></div>
+      <div class="skeleton-card"></div>
+      <div class="skeleton-card"></div>
+    </div>
   </div>
 
+  <!-- Results -->
   <div id="results" class="results">
-    <div class="result-header">
+    <div class="hero-card">
       <div class="score-ring">
-        <svg width="80" height="80" viewBox="0 0 80 80">
-          <circle class="bg-circle" cx="40" cy="40" r="34" />
+        <svg width="88" height="88" viewBox="0 0 88 88">
+          <circle class="bg-circle" cx="44" cy="44" r="38" />
           <circle
             id="score-circle"
             class="value-circle"
-            cx="40"
-            cy="40"
-            r="34"
+            cx="44"
+            cy="44"
+            r="38"
             stroke-dasharray="0"
             stroke-dashoffset="0"
           />
         </svg>
-        <div class="score-text" id="score-value">0</div>
+        <div class="score-text">
+          <span class="score-number" id="score-value">0</span>
+          <span class="score-unit">Score</span>
+        </div>
       </div>
       <div class="city-info">
+        <div class="city-badge">📍 Destination</div>
         <h2 id="city-name">—</h2>
-        <p class="rec" id="rec-text">Travel Score</p>
+        <p class="score-label" id="rec-text">Travel Score</p>
       </div>
     </div>
 
     <div class="cards">
       <div class="card">
-        <h3>Temperature</h3>
+        <div class="card-header">
+          <div class="card-icon blue">🌡️</div>
+          <h3>Temperature</h3>
+        </div>
         <div class="value" id="weather-temp">—</div>
         <div class="sub" id="weather-cond">—</div>
       </div>
 
       <div class="card">
-        <h3>Exchange Rate</h3>
+        <div class="card-header">
+          <div class="card-icon green">💱</div>
+          <h3>Exchange Rate</h3>
+        </div>
         <div class="value" id="exchange-base">—</div>
         <div class="sub" id="exchange-rate">—</div>
       </div>
 
       <div class="card full">
-        <h3>Weather Details</h3>
-        <div id="weather-details"></div>
+        <div class="card-header">
+          <div class="card-icon purple">🌤️</div>
+          <h3>Weather Details</h3>
+        </div>
+        <div class="detail-grid" id="weather-details"></div>
       </div>
 
       <div class="card full" id="rec-card">
-        <h3>Recommendation</h3>
-        <div class="value">—</div>
+        <div class="card-header">
+          <div class="card-icon amber">💡</div>
+          <h3>Recommendation</h3>
+        </div>
+        <div id="rec-content"></div>
       </div>
     </div>
   </div>
 
   <footer>
-    Built with <a href="https://fastapi.tiangolo.com" target="_blank">FastAPI</a> &middot;
-    <a href="/docs" target="_blank">API Docs</a> &middot;
+    Built with <a href="https://fastapi.tiangolo.com" target="_blank">FastAPI</a>
+    <span class="dot">·</span>
+    <a href="/docs" target="_blank">API Docs</a>
+    <span class="dot">·</span>
     <a href="https://github.com/neoastra303/NomadStack-API" target="_blank">GitHub</a>
   </footer>
 </div>
