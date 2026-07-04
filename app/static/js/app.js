@@ -117,7 +117,7 @@ async function handleSearch(e) {
     const data = await resp.json();
 
     if (!resp.ok) {
-      showError(data.detail?.error || data.detail || 'Something went wrong.');
+      showError(data.error || 'Something went wrong.');
       return;
     }
 
