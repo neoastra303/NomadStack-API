@@ -1,0 +1,16 @@
+[build-system]
+requires = ["setuptools>=68.0"]
+build-backend = "setuptools.backends._legacy:_Backend"
+
+[project]
+name = "nomadstack-api"
+version = "1.0.0"
+description = "A Travel Intelligence API aggregating multiple data sources."
+license = {text = "MIT"}
+requires-python = ">=3.11"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.pytest_asyncio]
+default_loop_scope = "function"
